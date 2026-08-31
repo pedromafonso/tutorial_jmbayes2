@@ -625,11 +625,11 @@ saveRDS(surv, "surv.rds")
 saveRDS(long_cr,  "long_cr.rds")
 saveRDS(surv_cr0, "surv_cr0.rds")
 
-saveRDS(long_ms, "data/long_ms.rds")
-saveRDS(surv_ms, "data/surv_ms.rds")
+saveRDS(long_ms, "long_ms.rds")
+saveRDS(surv_ms, "surv_ms.rds")
 
-saveRDS(long_rc, "data/long_rc.rds")
-saveRDS(surv_rc, "data/surv_rc.rds")
+saveRDS(long_rc, "long_rc.rds")
+saveRDS(surv_rc, "surv_rc.rds")
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # Data descriptives ============================================================
