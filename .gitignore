@@ -1,3 +1,4 @@
+# macOS files
 .DS_Store
 .AppleDouble
 .LSOverride
@@ -8,27 +9,17 @@ Icon?
 .Spotlight-V100
 .TemporaryItems
 .Trashes
-.VolumeIcon.icns
-.com.apple.timemachine.donotpresent
 
-.AppleDB
-.AppleDesktop
-Network Trash Folder
-Temporary Items
-.apdisk
-
+# R / RStudio temporary files
 .Rhistory
 .Rapp.history
 .RData
-.RDataTmp
 .Ruserdata
 .Rproj.user/
-*.Rproj
 
+# Editor/project metadata
 .vscode/
 .idea/
-*.swp
-*.swo
-*~
 
+# Ignore everything inside Local
 Local/
