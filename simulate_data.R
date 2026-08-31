@@ -619,17 +619,17 @@ rownames(surv_rc) <- NULL
 long_rc <- long0[long0$time <= surv_cr0$stop[long0$id], ]
 
 ### Export datasets
-saveRDS(long, "long.rds")
-saveRDS(surv, "surv.rds")
+saveRDS(long, "Data/long.rds")
+saveRDS(surv, "Data/surv.rds")
 
-saveRDS(long_cr,  "long_cr.rds")
-saveRDS(surv_cr0, "surv_cr0.rds")
+saveRDS(long_cr,  "Data/long_cr.rds")
+saveRDS(surv_cr0, "Data/surv_cr0.rds")
 
-saveRDS(long_ms, "long_ms.rds")
-saveRDS(surv_ms, "surv_ms.rds")
+saveRDS(long_ms, "Data/long_ms.rds")
+saveRDS(surv_ms, "Data/surv_ms.rds")
 
-saveRDS(long_rc, "long_rc.rds")
-saveRDS(surv_rc, "surv_rc.rds")
+saveRDS(long_rc, "Data/long_rc.rds")
+saveRDS(surv_rc, "Data/surv_rc.rds")
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # Data descriptives ============================================================
