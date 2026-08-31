@@ -1,1 +1,1 @@
-R code accompanying the tutorial Extended Joint Models for Longitudinal and Time-to-Event Data: A Tutorial. The repository contains the code used to generate the simulated datasets and all code listings presented in the tutorial.
+R code accompanying the tutorial "Extended Joint Models for Longitudinal and Time-to-Event Data: A Tutorial." The repository contains the code used to generate the simulated datasets and all code listings presented in the tutorial.
