@@ -1,6 +1,14 @@
-rm(list = ls())
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-# Packages =====================================================================
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Title: R code accompanying "Extended Joint Models for Longitudinal and       #
+#        Time-to-Event Data: A Tutorial"                                       #
+# Authors: Pedro Miranda-Afonso and Dimitris Rizopoulos                        #
+# Contact: p.mirandaafonso@erasmusmc.nl                                        #
+# File: Simulation of the datasets used in the tutorial                        #
+# Repository: https://github.com/pedromafonso/tutorial_jmbayes2                #
+# Requirements: R and the required R packages, including JMbayes2.             #
+# JMbayes2 can be installed from CRAN using install.packages("JMbayes2").      #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Load packages and functions ==================================================
 
 library("survival")
 library("MASS")
@@ -9,51 +17,7 @@ library("GLMMadaptive")
 # remotes::install_github("drizopoulos/jmbayes2")
 library("JMbayes2")
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-# Functions ====================================================================
-
-invS <- function(t, i, u_i, b1_i, b2_i, f_i,
-                 h0, gammas, alpha1, alpha2, alphaf, betas1, betas2, 
-                 long, surv,
-                 f_FE1, f_FE2, f_RE1, f_RE2, f_S,
-                 tstart = 0, inv_link1 = NULL, inv_link2 = NULL) {
-  
-  # Baseline covariates
-  W <- model.matrix(f_S, data = surv)
-  W <- W[, names(gammas), drop = FALSE]
-  eta_S <- as.vector(W[i, , drop = FALSE] %*% gammas)
-  h <- function(s) {
-    time_s <- s + tstart
-    data_i <- long[rep(which(long$id == i)[1], length(s)), , drop = FALSE]
-    data_i$time <- time_s
-    # Longitudinal outcome 1
-    X1 <- model.matrix(f_FE1, data = data_i)
-    X1 <- X1[, names(betas1), drop = FALSE]
-    Z1 <- model.matrix(f_RE1, data = data_i)
-    b1 <- matrix(b1_i, nrow = length(s), ncol = length(b1_i), byrow = TRUE)
-    eta1 <- as.vector(X1 %*% betas1 + rowSums(Z1 * b1))
-    mu1 <- if(is.null(inv_link1)) eta1 else inv_link1(eta1) 
-    # Longitudinal outcome 2
-    X2 <- model.matrix(f_FE2, data = data_i)
-    X2 <- X2[, names(betas2), drop = FALSE]
-    Z2 <- model.matrix(f_RE2, data = data_i)
-    b2 <- matrix(b2_i, nrow = length(s), ncol = length(b2_i), byrow = TRUE)
-    eta2 <- as.vector(X2 %*% betas2 + rowSums(Z2 * b2))
-    mu2 <- if(is.null(inv_link2)) eta2 else inv_link2(eta2) 
-    # Event hazard
-    h0 * exp(eta_S + alpha1 * mu1 + alpha2 * mu2 + alphaf * f_i)
-  }
-  integrate(h, lower = 0, upper = t)$value + log(u_i)
-}
-
-gen_mu <- function(data, betas, b, f_FE, f_RE, inv_link = NULL) {
-  X <- model.matrix(f_FE, data = data)
-  X <- X[, names(betas), drop = FALSE]
-  Z <- model.matrix(f_RE, data = data)
-  eta <- as.vector(X %*% betas + rowSums(Z * b[data$id, , drop = FALSE]))
-  mu <- if (is.null(inv_link)) eta else inv_link(eta)
-  mu
-}
+source("functions.R")
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # Simulation settings ==========================================================
@@ -738,151 +702,3 @@ gap_pex <- with(surv_rc[surv_rc$status == 1, ],
                 stop - start)
 
 round(summary(gap_pex), 2)
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-# Listings =====================================================================
-## Listing A ===================================================================
-
-fit_long1 <- lme(fixed = lf ~ time * sex + ageD,
-                 random =~ time | id,
-                 data = long)
-
-fit_surv <- coxph(Surv(stop, status) ~ sex + ageD,
-                  data = surv)
-
-fit_jm <- jm(Surv_object = fit_surv,
-             Mixed_objects = fit_long1,
-             time_var = "time")
-
-summary(fit_jm)
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-## Listing B ===================================================================
-
-fit_long1_b <- update(fit_long1, fixed = lf ~ time * sex + ns(ageD, 2))
-
-fit_jm_b <- jm(Surv_object = fit_surv,
-               Mixed_objects = fit_long1_b,
-               time_var = "time")
-
-summary(fit_jm_b)
-compare_jm(fit_jm, fit_jm_b, type = "marginal")
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-## Listing C ===================================================================
-
-fit_long2 <- mixed_model(fixed = pa ~ time + sex + ageD,
-                         random =~ time | id,
-                         family = binomial(link = "logit"),
-                         data = long)
-
-fit_jm2 <- jm(Surv_object = fit_surv,
-              Mixed_objects = list(fit_long1, fit_long2),
-              time_var = "time")
-
-summary(fit_jm2)
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-## Listing D ===================================================================
-
-fit_jm3 <- update(fit_jm2,
-                  functional_forms =~ value(lf) + slope(lf) + vexpit(value(pa)))
-
-summary(fit_jm3)
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-## Listing E ===================================================================
-
-fit_jm4 <- update(fit_jm2,
-                  functional_forms =~ area(lf, time_window = 0.5) +
-                    Delta(lf, time_window = 0.5, standardise = TRUE) +
-                    vexpit(value(pa)),
-                  n_iter = 7000L, n_burnin = 1000L, n_thin = 2L)
-summary(fit_jm4)
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-## Listing F ===================================================================
-
-surv_rc[1:6, c("id", "start", "stop", "status")]
-
-fit_surv_rc <- coxph(Surv(start, stop, status) ~ sex + ageD,
-                     data = surv_rc)
-
-fit_jm_rc <- jm(Surv_object = fit_surv_rc, 
-                Mixed_objects = fit_long1, 
-                time_var = "time", 
-                recurrent = "gap")
-
-summary(fit_jm_rc)
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-## Listing G ===================================================================
-
-surv_cr0[1:3, c("id", "stop", "status")]
-
-surv_cr <- crisk_setup(surv_cr0,
-                       statusVar = "status",
-                       censLevel = "alv",
-                       nameStrata = "strat")
-surv_cr[1:6, c("id", "stop", "status2", "strat")]
-
-fit_long1_cr <- update(fit_long1, data = long_cr)
-
-fit_long2_cr <- update(fit_long2, data = long_cr)
-
-fit_surv_cr <- coxph(Surv(stop, status2) ~ (sex + ageD):strata(strat),
-                     data = surv_cr)
-
-fit_jm_cr <- jm(Surv_object = fit_surv_cr,
-                Mixed_objects = list(fit_long1_cr, fit_long2_cr),
-                time_var = "time",
-                functional_forms =~ (value(lf) + vexpit(value(pa))):strat,
-                n_iter = 7000L, n_burnin = 1000L, n_thin = 2L)
-
-summary(fit_jm_cr)
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-## Listing H ===================================================================
-
-surv_ms[1:4, c("id", "start", "stop", "status", "strat")]
-
-fit_long1_ms <- update(fit_long1, data = long_ms)
-
-fit_long2_ms <- update(fit_long2, data = long_ms)
-
-fit_surv_ms <- coxph(Surv(start, stop, status) ~ (sex + ageD):strata(strat),
-                     data = surv_ms)
-
-fit_jm_ms <- jm(Surv_object = fit_surv_ms,
-                Mixed_objects = list(fit_long1_ms, fit_long2_ms),
-                time_var = "time",
-                functional_forms =~ (value(lf) + vexpit(value(pa))):strat,
-                n_iter = 14000L, n_burnin = 2000L, n_thin = 4L)
-
-summary(fit_jm_ms)
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-## Listing I ===================================================================
-
-surv_cr0[1:3, c("id", "stop", "status")]
-
-surv_rc[1:6, c("id", "start", "stop", "status")]
-
-surv_comb <- rc_setup(rc_data = surv_rc, trm_data = surv_cr0,
-                      idVar = "id", statusVar = "status",
-                      startVar = "start", stopVar = "stop",
-                      trm_censLevel = "alv",
-                      nameStrata = "strat", nameStatus = "status")
-
-surv_comb[1:12, c("id", "start", "stop", "status", "strat")]
-
-fit_surv_comb <- coxph(Surv(start, stop, status) ~ (sex + ageD):strata(strat),
-                       data = surv_comb)
-
-fit_jm_comb <- jm(Surv_object = fit_surv_comb, 
-                  Mixed_objects = list(fit_long1_cr, fit_long2_cr), 
-                  time_var = "time", recurrent = "gap",
-                  functional_forms =~ (value(lf) + vexpit(value(pa))):strat,
-                  n_iter = 14000L, n_burnin = 2000L, n_thin = 4L)
-
-summary(fit_jm_comb)
