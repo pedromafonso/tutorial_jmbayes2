@@ -539,27 +539,27 @@ surv_alv_tx <- data.frame(id = surv0$id,
                           start = 0,
                           stop = time_comb,
                           status = time_alv_tx < time_alv_dth,
-                          strat = "alv-tx",
+                          process = "alv-tx",
                           sex = surv0$sex,
                           ageD = surv0$ageD)
 surv_alv_dth <- data.frame(id = surv0$id,
                            start = 0,
                            stop = time_comb,
                            status = time_alv_dth < time_alv_tx,
-                           strat = "alv-dth",
+                           process = "alv-dth",
                            sex = surv0$sex,
                            ageD = surv0$ageD)
 surv_tx_dth <- data.frame(id = surv0$id[ind_tx],
                           start = time_alv_tx[ind_tx],
                           stop = pmin(time_tx_dth[ind_tx], t_max),
                           status = is.finite(time_tx_dth[ind_tx]),
-                          strat = "tx-dth",
+                          process = "tx-dth",
                           sex = surv0$sex[ind_tx],
                           ageD = surv0$ageD[ind_tx])
 
 surv_ms <- rbind(surv_alv_tx, surv_alv_dth, surv_tx_dth)
-surv_ms$strat <- factor(surv_ms$strat, levels = c("alv-tx", "alv-dth", "tx-dth"))
-surv_ms <- surv_ms[order(surv_ms$id, surv_ms$start, surv_ms$strat), ]
+surv_ms$process <- factor(surv_ms$process, levels = c("alv-tx", "alv-dth", "tx-dth"))
+surv_ms <- surv_ms[order(surv_ms$id, surv_ms$start, surv_ms$process), ]
 rownames(surv_ms) <- NULL
 
 stop_max <- tapply(surv_ms$stop, surv_ms$id, max)
@@ -654,16 +654,16 @@ c(tx = sum(surv_cr0$status == "tx"),
   tx_minus_dth = sum(surv_cr0$status == "tx") - sum(surv_cr0$status == "dth"))
 
 ### Mulsitate JM
-lev_ms <- levels(surv_ms$strat)
+lev_ms <- levels(surv_ms$process)
 desc_ms <- data.frame(transition = lev_ms)
-desc_ms$n_risk <- sapply(lev_ms, function(x) sum(surv_ms$strat == x))
-desc_ms$events <- sapply(lev_ms, function(x) sum(surv_ms$status[surv_ms$strat == x]))
-desc_ms$person_time <- sapply(lev_ms, function(x) sum(surv_ms$stop[surv_ms$strat == x] - 
-                                                        surv_ms$start[surv_ms$strat == x]))
+desc_ms$n_risk <- sapply(lev_ms, function(x) sum(surv_ms$process == x))
+desc_ms$events <- sapply(lev_ms, function(x) sum(surv_ms$status[surv_ms$process == x]))
+desc_ms$person_time <- sapply(lev_ms, function(x) sum(surv_ms$stop[surv_ms$process == x] - 
+                                                        surv_ms$start[surv_ms$process == x]))
 desc_ms$event_prop <- desc_ms$events / desc_ms$n_risk
 desc_ms$rate_100py <- 100 * desc_ms$events / desc_ms$person_time
 desc_ms$median_event_time <- sapply(lev_ms, function(x) { 
-  ind <- surv_ms$strat == x & surv_ms$status == 1
+  ind <- surv_ms$process == x & surv_ms$status == 1
   median(surv_ms$stop[ind])
 })
 desc_ms$event_prop <- desc_ms$event_prop
