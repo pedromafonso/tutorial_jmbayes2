@@ -22,10 +22,3 @@ The scripts require R and the packages used throughout the tutorial, including *
 ```r
 install.packages("JMbayes2")
 ```
-
-## Contact
-
-Pedro Miranda-Afonso  
-Department of Epidemiology and Biostatistics  
-Erasmus University Medical Center  
-p.mirandaafonso@erasmusmc.nl
