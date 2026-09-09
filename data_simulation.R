@@ -511,18 +511,21 @@ ind_tx <- time_alv_tx < time_alv_dth
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 ## Datasets ====================================================================
+
+time_comb <- pmin(time_alv_dth, time_alv_tx, t_max)
+
 ### Basic JM
 
 surv <- data.frame(id = surv0$id,
-                   stop = pmin(time_alv_dth, t_max),
-                   status = is.finite(time_alv_dth),
+                   stop = time_comb,
+                   status = is.finite(time_alv_dth) | is.finite(time_alv_tx),
                    sex = surv0$sex,
                    ageD = surv0$ageD) 
 
 long <- long0[long0$time <= surv$stop[long0$id], ]
 
 ### Competing risks JM
-time_comb <- pmin(time_alv_dth, time_alv_tx, t_max)
+
 surv_cr0 <- data.frame(id = surv0$id,
                        stop = time_comb,
                        status = "alv",
@@ -532,34 +535,32 @@ surv_cr0$status[time_alv_tx < time_alv_dth] <- "tx"
 surv_cr0$status[time_alv_tx > time_alv_dth] <- "dth"
 surv_cr0$status <- factor(surv_cr0$status, levels = c("alv", "tx", "dth"))
 
-long_cr <- long0[long0$time <= surv_cr0$stop[long0$id], ]
-
 ### Multistate JM
 surv_alv_tx <- data.frame(id = surv0$id,
                           start = 0,
                           stop = time_comb,
                           status = time_alv_tx < time_alv_dth,
-                          process = "alv-tx",
+                          proc = "alv-tx",
                           sex = surv0$sex,
                           ageD = surv0$ageD)
 surv_alv_dth <- data.frame(id = surv0$id,
                            start = 0,
                            stop = time_comb,
                            status = time_alv_dth < time_alv_tx,
-                           process = "alv-dth",
+                           proc = "alv-dth",
                            sex = surv0$sex,
                            ageD = surv0$ageD)
 surv_tx_dth <- data.frame(id = surv0$id[ind_tx],
                           start = time_alv_tx[ind_tx],
                           stop = pmin(time_tx_dth[ind_tx], t_max),
                           status = is.finite(time_tx_dth[ind_tx]),
-                          process = "tx-dth",
+                          proc = "tx-dth",
                           sex = surv0$sex[ind_tx],
                           ageD = surv0$ageD[ind_tx])
 
 surv_ms <- rbind(surv_alv_tx, surv_alv_dth, surv_tx_dth)
-surv_ms$process <- factor(surv_ms$process, levels = c("alv-tx", "alv-dth", "tx-dth"))
-surv_ms <- surv_ms[order(surv_ms$id, surv_ms$start, surv_ms$process), ]
+surv_ms$proc <- factor(surv_ms$proc, levels = c("alv-tx", "alv-dth", "tx-dth"))
+surv_ms <- surv_ms[order(surv_ms$id, surv_ms$start, surv_ms$proc), ]
 rownames(surv_ms) <- NULL
 
 stop_max <- tapply(surv_ms$stop, surv_ms$id, max)
@@ -580,19 +581,15 @@ surv_rc$stop  <- unlist(Map(function(x, end) c(x, end), time_pex, surv_cr0$stop)
 surv_rc$status <- as.integer(sequence(n_pex + 1L) <= rep(n_pex, times = n_pex + 1L))
 rownames(surv_rc) <- NULL
 
-long_rc <- long0[long0$time <= surv_cr0$stop[long0$id], ]
-
 ### Export datasets
 saveRDS(long, "Data/long.rds")
 saveRDS(surv, "Data/surv.rds")
 
-saveRDS(long_cr,  "Data/long_cr.rds")
 saveRDS(surv_cr0, "Data/surv_cr0.rds")
 
 saveRDS(long_ms, "Data/long_ms.rds")
 saveRDS(surv_ms, "Data/surv_ms.rds")
 
-saveRDS(long_rc, "Data/long_rc.rds")
 saveRDS(surv_rc, "Data/surv_rc.rds")
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
@@ -629,11 +626,11 @@ round(mean(long0$pa), 3)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 ## Event-time outcomes =========================================================
 
-### Basic JM
+### Basic JM: transplantation/death
 round(c(n = nrow(surv),
         deaths = sum(surv$status),
         death_prop = mean(surv$status),
-        median_death_time = median(surv$stop[surv$status]),
+        median_event_time = median(surv$stop[surv$status]),
         median_followup = median(surv$stop)), 3)
 
 ### CR JM: transplantation and death
@@ -654,16 +651,16 @@ c(tx = sum(surv_cr0$status == "tx"),
   tx_minus_dth = sum(surv_cr0$status == "tx") - sum(surv_cr0$status == "dth"))
 
 ### Mulsitate JM
-lev_ms <- levels(surv_ms$process)
+lev_ms <- levels(surv_ms$proc)
 desc_ms <- data.frame(transition = lev_ms)
-desc_ms$n_risk <- sapply(lev_ms, function(x) sum(surv_ms$process == x))
-desc_ms$events <- sapply(lev_ms, function(x) sum(surv_ms$status[surv_ms$process == x]))
-desc_ms$person_time <- sapply(lev_ms, function(x) sum(surv_ms$stop[surv_ms$process == x] - 
-                                                        surv_ms$start[surv_ms$process == x]))
+desc_ms$n_risk <- sapply(lev_ms, function(x) sum(surv_ms$proc == x))
+desc_ms$events <- sapply(lev_ms, function(x) sum(surv_ms$status[surv_ms$proc == x]))
+desc_ms$person_time <- sapply(lev_ms, function(x) sum(surv_ms$stop[surv_ms$proc == x] - 
+                                                        surv_ms$start[surv_ms$proc == x]))
 desc_ms$event_prop <- desc_ms$events / desc_ms$n_risk
 desc_ms$rate_100py <- 100 * desc_ms$events / desc_ms$person_time
 desc_ms$median_event_time <- sapply(lev_ms, function(x) { 
-  ind <- surv_ms$process == x & surv_ms$status == 1
+  ind <- surv_ms$proc == x & surv_ms$status == 1
   median(surv_ms$stop[ind])
 })
 desc_ms$event_prop <- desc_ms$event_prop

@@ -8,19 +8,23 @@
 # Requirements: R and the required R packages, including JMbayes2.             #
 # JMbayes2 can be installed from CRAN using install.packages("JMbayes2").      #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Load packages and functions ==================================================
+
+# remotes::install_github("drizopoulos/jmbayes2")
+library("JMbayes2")
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Load data ====================================================================
 
-long <- saveRDS(, "Data/long.rds")
-surv <- saveRDS("Data/surv.rds")
+long <- readRDS("Data/long.rds")
+surv <- readRDS("Data/surv.rds")
 
-long_cr <- saveRDS("Data/long_cr.rds")
-surv_cr0 <- saveRDS("Data/surv_cr0.rds")
+surv_cr0 <- readRDS("Data/surv_cr0.rds")
 
-long_ms <- saveRDS("Data/long_ms.rds")
-surv_ms <- saveRDS("Data/surv_ms.rds")
+long_ms <- readRDS("Data/long_ms.rds")
+surv_ms <- readRDS("Data/surv_ms.rds")
 
-long_rc <- saveRDS("Data/long_rc.rds")
-surv_rc <- saveRDS("Data/surv_rc.rds")
+surv_rc <- readRDS("Data/surv_rc.rds")
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # Listings =====================================================================
@@ -86,7 +90,7 @@ summary(fit_jm4)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 ## Listing F ===================================================================
 
-surv_rc[1:6, c("id", "start", "stop", "status")]
+surv_rc[1:5, c("id", "start", "stop", "status")]
 
 fit_surv_rc <- coxph(Surv(start, stop, status) ~ sex + ageD,
                      data = surv_rc)
@@ -106,20 +110,16 @@ surv_cr0[1:3, c("id", "stop", "status")]
 surv_cr <- crisk_setup(surv_cr0,
                        statusVar = "status",
                        censLevel = "alv",
-                       nameStrata = "process")
-surv_cr[1:6, c("id", "stop", "status2", "process")]
+                       nameStrata = "proc")
+surv_cr[1:6, c("id", "stop", "status2", "proc")]
 
-fit_long1_cr <- update(fit_long1, data = long_cr)
-
-fit_long2_cr <- update(fit_long2, data = long_cr)
-
-fit_surv_cr <- coxph(Surv(stop, status2) ~ (sex + ageD):strata(process),
+fit_surv_cr <- coxph(Surv(stop, status2) ~ (sex + ageD):strata(proc),
                      data = surv_cr)
 
 fit_jm_cr <- jm(Surv_object = fit_surv_cr,
-                Mixed_objects = list(fit_long1_cr, fit_long2_cr),
+                Mixed_objects = list(fit_long1, fit_long2),
                 time_var = "time",
-                functional_forms =~ (value(lf) + vexpit(value(pa))):process,
+                functional_forms =~ (value(lf) + vexpit(value(pa))):proc,
                 n_iter = 7000L, n_burnin = 1000L, n_thin = 2L)
 
 summary(fit_jm_cr)
@@ -127,19 +127,34 @@ summary(fit_jm_cr)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 ## Listing H ===================================================================
 
-surv_ms[1:4, c("id", "start", "stop", "status", "process")]
+surv_ms[1:4, c("id", "start", "stop", "status", "proc")]
+
+id_tx <- surv_ms$id[surv_ms$proc == "alv-tx" & surv_ms$status == 1][1]
+
+t_tx <- surv_ms$stop[surv_ms$id == id_tx &
+                       surv_ms$proc == "alv-tx"]
+
+long[long$id == id_tx &
+       long$time >= t_tx - 1.5 &
+       long$time <= t_tx + 1.5,
+     c("id", "time", "lf", "pa")]
+
+long_ms[long_ms$id == id_tx &
+          long_ms$time >= t_tx - 1.5 &
+          long_ms$time <= t_tx + 1.5,
+        c("id", "time", "lf", "pa")]
 
 fit_long1_ms <- update(fit_long1, data = long_ms)
 
 fit_long2_ms <- update(fit_long2, data = long_ms)
 
-fit_surv_ms <- coxph(Surv(start, stop, status) ~ (sex + ageD):strata(process),
+fit_surv_ms <- coxph(Surv(start, stop, status) ~ (sex + ageD):strata(proc),
                      data = surv_ms)
 
 fit_jm_ms <- jm(Surv_object = fit_surv_ms,
                 Mixed_objects = list(fit_long1_ms, fit_long2_ms),
                 time_var = "time",
-                functional_forms =~ (value(lf) + vexpit(value(pa))):process,
+                functional_forms =~ (value(lf) + vexpit(value(pa))):proc,
                 n_iter = 14000L, n_burnin = 2000L, n_thin = 4L)
 
 summary(fit_jm_ms)
@@ -155,17 +170,17 @@ surv_comb <- rc_setup(rc_data = surv_rc, trm_data = surv_cr0,
                       idVar = "id", statusVar = "status",
                       startVar = "start", stopVar = "stop",
                       trm_censLevel = "alv",
-                      nameStrata = "process", nameStatus = "status")
+                      nameStrata = "proc", nameStatus = "status")
 
-surv_comb[1:12, c("id", "start", "stop", "status", "process")]
+surv_comb[1:12, c("id", "start", "stop", "status", "proc")]
 
-fit_surv_comb <- coxph(Surv(start, stop, status) ~ (sex + ageD):strata(process),
+fit_surv_comb <- coxph(Surv(start, stop, status) ~ (sex + ageD):strata(proc),
                        data = surv_comb)
 
 fit_jm_comb <- jm(Surv_object = fit_surv_comb, 
-                  Mixed_objects = list(fit_long1_cr, fit_long2_cr), 
+                  Mixed_objects = list(fit_long1, fit_long2), 
                   time_var = "time", recurrent = "gap",
-                  functional_forms =~ (value(lf) + vexpit(value(pa))):process,
+                  functional_forms =~ (value(lf) + vexpit(value(pa))):proc,
                   n_iter = 14000L, n_burnin = 2000L, n_thin = 4L)
 
 summary(fit_jm_comb)
