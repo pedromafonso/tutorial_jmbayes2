@@ -129,20 +129,9 @@ summary(fit_jm_cr)
 
 surv_ms[1:4, c("id", "start", "stop", "status", "proc")]
 
-id_tx <- surv_ms$id[surv_ms$proc == "alv-tx" & surv_ms$status == 1][1]
 
-t_tx <- surv_ms$stop[surv_ms$id == id_tx &
-                       surv_ms$proc == "alv-tx"]
-
-long[long$id == id_tx &
-       long$time >= t_tx - 1.5 &
-       long$time <= t_tx + 1.5,
-     c("id", "time", "lf", "pa")]
-
-long_ms[long_ms$id == id_tx &
-          long_ms$time >= t_tx - 1.5 &
-          long_ms$time <= t_tx + 1.5,
-        c("id", "time", "lf", "pa")]
+long[long$id == 6, c("id", "time", "lf", "pa")]
+long_ms[long_ms$id == 6, c("id", "time", "lf", "pa")]
 
 fit_long1_ms <- update(fit_long1, data = long_ms)
 
