@@ -14,17 +14,17 @@
 library("JMbayes2")
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Load data ====================================================================
+# Generate data ================================================================
 
-long <- readRDS("Data/long.rds")
-surv <- readRDS("Data/surv.rds")
+.objects_before <- ls(all.names = TRUE)
 
-surv_cr0 <- readRDS("Data/surv_cr0.rds")
+source("data_simulation.R")
 
-long_ms <- readRDS("Data/long_ms.rds")
-surv_ms <- readRDS("Data/surv_ms.rds")
+.keep <- c("long", "surv", "surv_cr0", "long_ms", "surv_ms", "surv_rc")
+.created <- setdiff(ls(all.names = TRUE), c(.objects_before, ".objects_before"))
 
-surv_rc <- readRDS("Data/surv_rc.rds")
+rm(list = setdiff(.created, .keep))
+rm(.objects_before, .keep, .created)
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # Listings =====================================================================
