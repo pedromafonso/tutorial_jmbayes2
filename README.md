@@ -12,12 +12,9 @@ The code is organized into three R scripts:
 
 ## How to use the files
 
-To reproduce the examples:
+To reproduce the examples, run `tutorial_analyses.R`. This script automatically sources `data_simulation.R`, which in turn sources `functions.R`, to generate the datasets and reproduce the models and analyses presented in the tutorial.
 
-1. Run `data_simulation.R`. This script automatically sources `functions.R` and generates the datasets required for the tutorial.
-2. Run `tutorial_analyses.R` to reproduce the models and analyses presented in the tutorial.
-
-The scripts require R and the packages used throughout the tutorial, including **JMbayes2**. The current CRAN version of **JMbayes2** can be installed with:
+The script requires R and the packages used throughout the tutorial, including **JMbayes2**. The current CRAN version of **JMbayes2** can be installed with:
 
 ```r
 install.packages("JMbayes2")

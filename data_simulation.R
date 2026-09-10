@@ -582,6 +582,9 @@ surv_rc$status <- as.integer(sequence(n_pex + 1L) <= rep(n_pex, times = n_pex + 
 rownames(surv_rc) <- NULL
 
 ### Export datasets
+
+if (!dir.exists("Data")) dir.create("Data")
+
 saveRDS(long, "Data/long.rds")
 saveRDS(surv, "Data/surv.rds")
 
